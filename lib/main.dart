@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -39,6 +40,19 @@ class TodoListScreenState extends State<TodoListScreen> {
   void initState() {
     super.initState();
     _loadLists();
+  }
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _showKeyboard(BuildContext context) {
+    FocusScope.of(context).unfocus();
+    Future.delayed(const Duration(milliseconds: 50), () {
+      FocusScope.of(context).requestFocus(FocusNode());
+    });
   }
 
   Future<String> get _localPath async {
@@ -145,8 +159,8 @@ class TodoListScreenState extends State<TodoListScreen> {
   }
 
   @override
-    Widget build(BuildContext context) {
-      return Scaffold(
+  Widget build(BuildContext context) {
+    return Scaffold(
         appBar: AppBar(
           title: const Text('Todo Liste'),
         ),
@@ -172,6 +186,9 @@ class TodoListScreenState extends State<TodoListScreen> {
                             setState(() {
                               _currentList = selected ? _lists[index] : null;
                               _textController.clear();
+                              if (selected) {
+                                _showKeyboard(context);
+                              }
                             });
                           },
                         ),
@@ -184,25 +201,31 @@ class TodoListScreenState extends State<TodoListScreen> {
             if (_currentList != null) ...[
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: _textController,
-                  decoration: const InputDecoration(
-                    hintText: 'Legg til nytt element',
-                    border: OutlineInputBorder(),
+                child: GestureDetector(
+                  onTap: () => _showKeyboard(context),
+                  child: TextField(
+                    controller: _textController,
+                    keyboardType: TextInputType.text,
+                    decoration: const InputDecoration(
+                      hintText: 'Legg til nytt element',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (value) {
+                      if (value.isNotEmpty) {
+                        setState(() {
+                          final currentIndex = _lists.indexOf(_currentList!);
+                          if (currentIndex != -1) {
+                            _lists[currentIndex].items.add(TodoItem(text: value));
+                            _saveLists();
+                            _textController.clear();
+                            // Vis tastaturet igjen etter innsending
+                            _showKeyboard(context);
+                          }
+                        });
+                      }
+                    },
                   ),
-                  onSubmitted: (value) {
-                    if (value.isNotEmpty) {
-                      setState(() {
-                        final currentIndex = _lists.indexOf(_currentList!);
-                        if (currentIndex != -1) {
-                          _lists[currentIndex].items.add(TodoItem(text: value));
-                          _currentList = _lists[currentIndex];
-                          _saveLists();
-                          _textController.clear();
-                        }
-                      });
-                    }
-                  },
                 ),
               ),
               Expanded(
@@ -259,8 +282,8 @@ class TodoListScreenState extends State<TodoListScreen> {
           child: const Icon(Icons.add),
         ),
       );
-    }
   }
+}
 
 class TodoList {
   String name;
