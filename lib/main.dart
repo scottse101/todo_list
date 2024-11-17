@@ -75,6 +75,37 @@ class TodoListScreenState extends State<TodoListScreen> {
     await file.writeAsString(json.encode(jsonList));
   }
 
+  void _deleteList(TodoList list) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Slett liste'),
+            content: Text('Er du sikker på at du vil slette "${list.name}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Avbryt'),
+              ),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    if (_currentList == list) {
+                      _currentList = null;
+                    }
+                    _lists.remove(list);
+                    _saveLists();
+                  });
+                  Navigator.pop(context);
+                },
+                child: const Text('Slett', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
   void _addNewList() {
     showDialog(
       context: context,
@@ -114,115 +145,122 @@ class TodoListScreenState extends State<TodoListScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Todo Liste'),
-      ),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 50,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _lists.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: ChoiceChip(
-                    label: Text(_lists[index].name),
-                    selected: _currentList == _lists[index],
-                    onSelected: (selected) {
-                      setState(() {
-                        _currentList = selected ? _lists[index] : null;
-                        _textController.clear();
-                      });
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          if (_currentList != null) ...[
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _textController,
-                decoration: const InputDecoration(
-                  hintText: 'Legg til nytt element',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (value) {
-                  if (value.isNotEmpty) {
-                    setState(() {
-                      final currentIndex = _lists.indexOf(_currentList!);
-                      if (currentIndex != -1) {
-                        _lists[currentIndex].items.add(TodoItem(text: value));
-                        _currentList = _lists[currentIndex];
-                        _saveLists();
-                        _textController.clear();
-                      }
-                    });
-                  }
-                },
-              ),
-            ),
-            Expanded(
-              child: ReorderableListView(
-                onReorder: (oldIndex, newIndex) {
-                  setState(() {
-                    if (newIndex > oldIndex) {
-                      newIndex -= 1;
-                    }
-                    final item = _currentList!.items.removeAt(oldIndex);
-                    _currentList!.items.insert(newIndex, item);
-                    _saveLists();
-                  });
-                },
-                children: [
-                  for (var i = 0; i < _currentList!.items.length; i++)
-                    ListTile(
-                      key: ValueKey(_currentList!.items[i].text),
-                      title: Text(
-                        _currentList!.items[i].text,
-                        style: TextStyle(
-                          decoration: _currentList!.items[i].isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
+    Widget build(BuildContext context) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Todo Liste'),
+        ),
+        body: Column(
+          children: [
+            SizedBox(
+              height: 50,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _lists.length,
+                itemBuilder: (context, index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onLongPress: () => _deleteList(_lists[index]),
+                        borderRadius: BorderRadius.circular(16),
+                        child: ChoiceChip(
+                          label: Text(_lists[index].name),
+                          selected: _currentList == _lists[index],
+                          onSelected: (selected) {
+                            setState(() {
+                              _currentList = selected ? _lists[index] : null;
+                              _textController.clear();
+                            });
+                          },
                         ),
                       ),
-                      leading: Checkbox(
-                        value: _currentList!.items[i].isCompleted,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _currentList!.items[i].isCompleted = value!;
-                            _saveLists();
-                          });
-                        },
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {
-                          setState(() {
-                            _currentList!.items.removeAt(i);
-                            _saveLists();
-                          });
-                        },
-                      ),
                     ),
-                ],
+                  );
+                },
               ),
             ),
+            if (_currentList != null) ...[
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: _textController,
+                  decoration: const InputDecoration(
+                    hintText: 'Legg til nytt element',
+                    border: OutlineInputBorder(),
+                  ),
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) {
+                      setState(() {
+                        final currentIndex = _lists.indexOf(_currentList!);
+                        if (currentIndex != -1) {
+                          _lists[currentIndex].items.add(TodoItem(text: value));
+                          _currentList = _lists[currentIndex];
+                          _saveLists();
+                          _textController.clear();
+                        }
+                      });
+                    }
+                  },
+                ),
+              ),
+              Expanded(
+                child: ReorderableListView(
+                  onReorder: (oldIndex, newIndex) {
+                    setState(() {
+                      if (newIndex > oldIndex) {
+                        newIndex -= 1;
+                      }
+                      final item = _currentList!.items.removeAt(oldIndex);
+                      _currentList!.items.insert(newIndex, item);
+                      _saveLists();
+                    });
+                  },
+                  children: [
+                    for (var i = 0; i < _currentList!.items.length; i++)
+                      ListTile(
+                        key: ValueKey(_currentList!.items[i].text),
+                        title: Text(
+                          _currentList!.items[i].text,
+                          style: TextStyle(
+                            decoration: _currentList!.items[i].isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
+                        leading: Checkbox(
+                          value: _currentList!.items[i].isCompleted,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _currentList!.items[i].isCompleted = value!;
+                              _saveLists();
+                            });
+                          },
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            setState(() {
+                              _currentList!.items.removeAt(i);
+                              _saveLists();
+                            });
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ],
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addNewList,
-        child: const Icon(Icons.add),
-      ),
-    );
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _addNewList,
+          child: const Icon(Icons.add),
+        ),
+      );
+    }
   }
-}
 
 class TodoList {
   String name;

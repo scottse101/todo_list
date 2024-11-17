@@ -37,15 +37,9 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
-
-    dependencies {
-        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-        implementation 'androidx.annotation:annotation:1.1.0'
-        implementation "io.flutter.embedding.engine:flutter.jar"
-        implementation "io.flutter:flutter_embedding_debug:1.0.0-3316dd8728419ad3534e3f6112aa6291f587078a"
-    }
 }
 
 flutter {
     source = "../.."
 }
+
