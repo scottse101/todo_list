@@ -229,51 +229,116 @@ class TodoListScreenState extends State<TodoListScreen> {
                 ),
               ),
               Expanded(
-                child: ReorderableListView(
-                  onReorder: (oldIndex, newIndex) {
-                    setState(() {
-                      if (newIndex > oldIndex) {
-                        newIndex -= 1;
-                      }
-                      final item = _currentList!.items.removeAt(oldIndex);
-                      _currentList!.items.insert(newIndex, item);
-                      _saveLists();
-                    });
-                  },
+                child: ListView(
                   children: [
-                    for (var i = 0; i < _currentList!.items.length; i++)
-                      ListTile(
-                        key: ValueKey(_currentList!.items[i].text),
-                        title: Text(
-                          _currentList!.items[i].text,
+                    if (_currentList!.items.where((item) => !item.isCompleted).isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text(
+                          'Ukjøpte varer',
                           style: TextStyle(
-                            decoration: _currentList!.items[i].isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        leading: Checkbox(
-                          value: _currentList!.items[i].isCompleted,
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _currentList!.items[i].isCompleted = value!;
-                              _saveLists();
-                            });
-                          },
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () {
-                            setState(() {
-                              _currentList!.items.removeAt(i);
-                              _saveLists();
-                            });
-                          },
+                      ),
+                      ReorderableListView(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        onReorder: (oldIndex, newIndex) {
+                          setState(() {
+                            final uncompleted = _currentList!.items
+                                .where((item) => !item.isCompleted)
+                                .toList();
+                            if (newIndex > oldIndex) {
+                              newIndex -= 1;
+                            }
+                            final item = uncompleted.removeAt(oldIndex);
+                            uncompleted.insert(newIndex, item);
+
+                            final completed = _currentList!.items
+                                .where((item) => item.isCompleted)
+                                .toList();
+                            _currentList!.items = [...uncompleted, ...completed];
+                            _saveLists();
+                          });
+                        },
+                        children: [
+                          for (var item in _currentList!.items.where((item) => !item.isCompleted))
+                            ListTile(
+                              key: ValueKey(item.text),
+                              title: Text(item.text),
+                              leading: Checkbox(
+                                value: item.isCompleted,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    item.isCompleted = value!;
+                                    _saveLists();
+                                  });
+                                },
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  setState(() {
+                                    _currentList!.items.remove(item);
+                                    _saveLists();
+                                  });
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                    if (_currentList!.items.where((item) => item.isCompleted).isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text(
+                          'Kjøpte varer',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
+                      ListView(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          for (var item in _currentList!.items.where((item) => item.isCompleted))
+                            ListTile(
+                              key: ValueKey(item.text),
+                              title: Text(
+                                item.text,
+                                style: const TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                              leading: Checkbox(
+                                value: item.isCompleted,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    item.isCompleted = value!;
+                                    _saveLists();
+                                  });
+                                },
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  setState(() {
+                                    _currentList!.items.remove(item);
+                                    _saveLists();
+                                  });
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-              ),
+              )
             ],
           ],
         ),
