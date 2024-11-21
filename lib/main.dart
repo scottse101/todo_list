@@ -33,6 +33,7 @@ class TodoListScreen extends StatefulWidget {
 
 class TodoListScreenState extends State<TodoListScreen> {
   final TextEditingController _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   final List<TodoList> _lists = [];
   TodoList? _currentList;
 
@@ -45,14 +46,8 @@ class TodoListScreenState extends State<TodoListScreen> {
   @override
   void dispose() {
     _textController.dispose();
+    _focusNode.dispose();
     super.dispose();
-  }
-
-  void _showKeyboard(BuildContext context) {
-    FocusScope.of(context).unfocus();
-    Future.delayed(const Duration(milliseconds: 50), () {
-      FocusScope.of(context).requestFocus(FocusNode());
-    });
   }
 
   Future<String> get _localPath async {
@@ -187,7 +182,7 @@ class TodoListScreenState extends State<TodoListScreen> {
                               _currentList = selected ? _lists[index] : null;
                               _textController.clear();
                               if (selected) {
-                                _showKeyboard(context);
+                                _focusNode.requestFocus();
                               }
                             });
                           },
@@ -202,9 +197,9 @@ class TodoListScreenState extends State<TodoListScreen> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: GestureDetector(
-                  onTap: () => _showKeyboard(context),
                   child: TextField(
                     controller: _textController,
+                    focusNode: _focusNode,
                     keyboardType: TextInputType.text,
                     decoration: const InputDecoration(
                       hintText: 'Legg til nytt element',
@@ -219,8 +214,7 @@ class TodoListScreenState extends State<TodoListScreen> {
                             _lists[currentIndex].items.add(TodoItem(text: value));
                             _saveLists();
                             _textController.clear();
-                            // Vis tastaturet igjen etter innsending
-                            _showKeyboard(context);
+                            _focusNode.requestFocus();
                           }
                         });
                       }
@@ -244,7 +238,6 @@ class TodoListScreenState extends State<TodoListScreen> {
                       ),
                       ReorderableListView(
                         shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
                         onReorder: (oldIndex, newIndex) {
                           setState(() {
                             final uncompleted = _currentList!.items
@@ -303,7 +296,6 @@ class TodoListScreenState extends State<TodoListScreen> {
                       ),
                       ListView(
                         shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
                         children: [
                           for (var item in _currentList!.items.where((item) => item.isCompleted))
                             ListTile(
