@@ -223,112 +223,126 @@ class TodoListScreenState extends State<TodoListScreen> {
                 ),
               ),
               Expanded(
-                child: ListView(
-                  children: [
-                    if (_currentList!.items.where((item) => !item.isCompleted).isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Ukjøpte varer',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      ReorderableListView(
-                        shrinkWrap: true,
-                        onReorder: (oldIndex, newIndex) {
-                          setState(() {
-                            final uncompleted = _currentList!.items
-                                .where((item) => !item.isCompleted)
-                                .toList();
-                            if (newIndex > oldIndex) {
-                              newIndex -= 1;
-                            }
-                            final item = uncompleted.removeAt(oldIndex);
-                            uncompleted.insert(newIndex, item);
-
-                            final completed = _currentList!.items
-                                .where((item) => item.isCompleted)
-                                .toList();
-                            _currentList!.items = [...uncompleted, ...completed];
-                            _saveLists();
-                          });
-                        },
-                        children: [
-                          for (var item in _currentList!.items.where((item) => !item.isCompleted))
-                            ListTile(
-                              key: ValueKey(item.text),
-                              title: Text(item.text),
-                              leading: Checkbox(
-                                value: item.isCompleted,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    item.isCompleted = value!;
-                                    _saveLists();
-                                  });
-                                },
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  setState(() {
-                                    _currentList!.items.remove(item);
-                                    _saveLists();
-                                  });
-                                },
+                child: ScrollConfiguration(
+                  behavior: const MaterialScrollBehavior().copyWith(
+                    overscroll: true,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        if (_currentList!.items.where((item) => !item.isCompleted).isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              'Ukjøpte varer',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                        ],
-                      ),
-                    ],
-                    if (_currentList!.items.where((item) => item.isCompleted).isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          'Kjøpte varer',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
                           ),
-                        ),
-                      ),
-                      ListView(
-                        shrinkWrap: true,
-                        children: [
-                          for (var item in _currentList!.items.where((item) => item.isCompleted))
-                            ListTile(
-                              key: ValueKey(item.text),
-                              title: Text(
-                                item.text,
-                                style: const TextStyle(
-                                  decoration: TextDecoration.lineThrough,
+                          ReorderableListView.builder(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            buildDefaultDragHandles: false,
+                            itemCount: _currentList!.items.where((item) => !item.isCompleted).length,
+                            itemBuilder: (context, index) {
+                              final item = _currentList!.items.where((item) => !item.isCompleted).toList()[index];
+                              return ListTile(
+                                key: ValueKey(item.text),
+                                title: Text(item.text),
+                                leading: Checkbox(
+                                  value: item.isCompleted,
+                                  onChanged: (bool? value) {
+                                    setState(() {
+                                      item.isCompleted = value!;
+                                      _saveLists();
+                                    });
+                                  },
                                 ),
-                              ),
-                              leading: Checkbox(
-                                value: item.isCompleted,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    item.isCompleted = value!;
-                                    _saveLists();
-                                  });
-                                },
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  setState(() {
-                                    _currentList!.items.remove(item);
-                                    _saveLists();
-                                  });
-                                },
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ReorderableDragStartListener(
+                                      index: index,
+                                      child: const Icon(Icons.drag_handle),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () {
+                                        setState(() {
+                                          _currentList!.items.remove(item);
+                                          _saveLists();
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            onReorder: (oldIndex, newIndex) {
+                              setState(() {
+                                final uncompleted = _currentList!.items
+                                    .where((item) => !item.isCompleted)
+                                    .toList();
+                                if (newIndex > oldIndex) {
+                                  newIndex -= 1;
+                                }
+                                final item = uncompleted.removeAt(oldIndex);
+                                uncompleted.insert(newIndex, item);
+
+                                final completed = _currentList!.items
+                                    .where((item) => item.isCompleted)
+                                    .toList();
+                                _currentList!.items = [...uncompleted, ...completed];
+                                _saveLists();
+                              });
+                            },
+                          ),
+                        ],
+                        if (_currentList!.items.where((item) => item.isCompleted).isNotEmpty) ...[
+                          const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              'Kjøpte varer',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
+                          ),
+                          ...(_currentList!.items.where((item) => item.isCompleted)
+                              .map((item) => ListTile(
+                            key: ValueKey(item.text),
+                            title: Text(
+                              item.text,
+                              style: const TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                            leading: Checkbox(
+                              value: item.isCompleted,
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  item.isCompleted = value!;
+                                  _saveLists();
+                                });
+                              },
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () {
+                                setState(() {
+                                  _currentList!.items.remove(item);
+                                  _saveLists();
+                                });
+                              },
+                            ),
+                          ))),
                         ],
-                      ),
-                    ],
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               )
             ],
