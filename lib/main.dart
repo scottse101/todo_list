@@ -41,6 +41,11 @@ class TodoListScreenState extends State<TodoListScreen> {
   void initState() {
     super.initState();
     _loadLists();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_currentList != null) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
   @override
@@ -196,30 +201,35 @@ class TodoListScreenState extends State<TodoListScreen> {
             if (_currentList != null) ...[
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: GestureDetector(
-                  child: TextField(
-                    controller: _textController,
-                    focusNode: _focusNode,
-                    keyboardType: TextInputType.text,
-                    decoration: const InputDecoration(
-                      hintText: 'Legg til nytt element',
-                      border: OutlineInputBorder(),
+                child: TextField(
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  autofocus: true,
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    hintText: 'Legg til nytt element',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (value) {
-                      if (value.isNotEmpty) {
-                        setState(() {
-                          final currentIndex = _lists.indexOf(_currentList!);
-                          if (currentIndex != -1) {
-                            _lists[currentIndex].items.add(TodoItem(text: value));
-                            _saveLists();
-                            _textController.clear();
-                            _focusNode.requestFocus();
-                          }
-                        });
-                      }
-                    },
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                    fillColor: Colors.white,
+                    filled: true,
                   ),
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) {
+                      setState(() {
+                        final currentIndex = _lists.indexOf(_currentList!);
+                        if (currentIndex != -1) {
+                          _lists[currentIndex].items.add(TodoItem(text: value));
+                          _saveLists();
+                          _textController.clear();
+                          _focusNode.requestFocus();
+                        }
+                      });
+                    }
+                  },
                 ),
               ),
               Expanded(
